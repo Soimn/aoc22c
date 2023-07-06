@@ -45,8 +45,8 @@ main(int argc, char** argv)
 
         for (uint64_t i = 0; i < width; ++i)
         {
-          north_front[i] = input[i] & 0xF;
-          south_front[i] = input[(height - 1)*(width + 2) + i] & 0xF;
+          north_front[i] = input[i];
+          south_front[i] = input[(height - 1)*(width + 2) + i];
         }
 
         for (uint64_t i = 0; i < height; ++i)
@@ -58,8 +58,8 @@ main(int argc, char** argv)
 
             for (uint64_t j = 0; j < width; ++j)
             {
-              unsigned char north_scan = north_line[j] & 0xF;
-              unsigned char south_scan = south_line[j] & 0xF;
+              unsigned char north_scan = north_line[j];
+              unsigned char south_scan = south_line[j];
 
               visible_trees[i*width + j]              |= (north_scan > north_front[j]);
               visible_trees[((height-1)-i)*width + j] |= (south_scan > south_front[j]);
@@ -71,13 +71,13 @@ main(int argc, char** argv)
 
           char* line = input + i*(width + 2);
 
-          unsigned char west_front = line[0] & 0xF;
-          unsigned char east_front = line[width - 1] & 0xF;
+          unsigned char west_front = line[0];
+          unsigned char east_front = line[width - 1];
 
           for (uint64_t j = 1; j < width; ++j)
           {
-            unsigned char west_scan = line[j] & 0xF;
-            unsigned char east_scan = line[(width - 1) - j] & 0xF;
+            unsigned char west_scan = line[j];
+            unsigned char east_scan = line[(width - 1) - j];
 
             visible_trees[i*width + j]           |= (west_scan > west_front);
             visible_trees[i*width + (width-1)-j] |= (east_scan > east_front);
@@ -103,6 +103,51 @@ main(int argc, char** argv)
         for (unsigned int i = 0; i < width*height; ++i) part1_result += visible_trees[i];
 
         printf("Part 1: %llu\n", part1_result);
+
+        for (uint64_t j = 0; j < height; ++j)
+        {
+          for (uint64_t i = 0; i < width; ++i)
+          {
+            unsigned char center_height = input[j*(width+2) + i];
+
+            uint64_t north_score = 0;
+            for (uint64_t k = 1; k < j + 1; ++k)
+            {
+              north_score += 1;
+              if (input[(j - k)*(width+2) + i] > center_height) break;
+            }
+
+            uint64_t south_score = 0;
+            for (uint64_t k = 1; k < height - j; ++k)
+            {
+              south_score += 1;
+              if (input[(j + k)*(width+2) + i] > center_height) break;
+            }
+
+            uint64_t east_score = 0;
+            for (uint64_t k = 1; k < width - j; ++k)
+            {
+              east_score += 1;
+              if (input[j*(width+2) + i + k] > center_height) break;
+            }
+
+            uint64_t west_score = 0;
+            for (uint64_t k = 1; k < i + 1; ++k)
+            {
+              west_score += 1;
+              if (input[j*(width+2) + (i  - k)] > center_height) break;
+            }
+
+            uint64_t score = north_score*south_score*east_score*west_score;
+
+              printf("%llu, %llu: %llu[%llu, %llu, %llu, %llu]\n", i, j, score, north_score, south_score, east_score, west_score);
+            if (score > part2_result)
+            {
+              part2_result = score;
+            }
+          }
+        }
+
         printf("Part 2: %llu\n", part2_result);
       }
 
