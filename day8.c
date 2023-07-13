@@ -140,7 +140,7 @@ main(int argc, char** argv)
 
             uint64_t score = north_score*south_score*east_score*west_score;
 
-              printf("%llu, %llu: %llu[%llu, %llu, %llu, %llu]\n", i, j, score, north_score, south_score, east_score, west_score);
+            printf("%llu, %llu: %llu[%llu, %llu, %llu, %llu]\n", i, j, score, north_score, south_score, east_score, west_score);
             if (score > part2_result)
             {
               part2_result = score;
