@@ -114,37 +114,33 @@ main(int argc, char** argv)
             for (uint64_t k = 1; k < j + 1; ++k)
             {
               north_score += 1;
-              if (input[(j - k)*(width+2) + i] > center_height) break;
+              if (input[(j - k)*(width+2) + i] >= center_height) break;
             }
 
             uint64_t south_score = 0;
             for (uint64_t k = 1; k < height - j; ++k)
             {
               south_score += 1;
-              if (input[(j + k)*(width+2) + i] > center_height) break;
+              if (input[(j + k)*(width+2) + i] >= center_height) break;
             }
 
             uint64_t east_score = 0;
-            for (uint64_t k = 1; k < width - j; ++k)
+            for (uint64_t k = 1; k < width - i; ++k)
             {
               east_score += 1;
-              if (input[j*(width+2) + i + k] > center_height) break;
+              if (input[j*(width+2) + i + k] >= center_height) break;
             }
 
             uint64_t west_score = 0;
             for (uint64_t k = 1; k < i + 1; ++k)
             {
               west_score += 1;
-              if (input[j*(width+2) + (i  - k)] > center_height) break;
+              if (input[j*(width+2) + (i - k)] >= center_height) break;
             }
 
             uint64_t score = north_score*south_score*east_score*west_score;
 
-              printf("%llu, %llu: %llu[%llu, %llu, %llu, %llu]\n", i, j, score, north_score, south_score, east_score, west_score);
-            if (score > part2_result)
-            {
-              part2_result = score;
-            }
+            if (score > part2_result) part2_result = score;
           }
         }
 

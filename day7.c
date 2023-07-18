@@ -144,6 +144,7 @@ main(int argc, char** argv)
 
         unsigned int level = 0;
 
+#if 0
         for (Directory* scan = &root_dir; scan != 0; )
         {
           for (unsigned int i = 0; i < level; ++i) printf("  ");
@@ -197,6 +198,64 @@ main(int argc, char** argv)
             }
           }
         }
+#else
+        for (Directory* scan = &root_dir; scan != 0; )
+        {
+          if (scan != &root_dir)
+          {
+            for (unsigned int i = 0; i < level-1; ++i) printf("    ");
+            printf("%s\n", scan->name);
+          }
+
+          if (scan->subdirs != 0)
+          {
+            scan = scan->subdirs;
+            level += 1;
+          }
+          else
+          {
+            for (File* file_scan = scan->files; file_scan != 0; file_scan = file_scan->next)
+            {
+              for (unsigned int i = 0; i < level-1 + 1; ++i) printf("    ");
+              printf("%lu\n", file_scan->size);
+
+              scan->size += file_scan->size;
+            }
+
+            if (scan->next != 0) scan = scan->next;
+            else
+            {
+              for (;;)
+              {
+                for (File* file_scan = scan->parent->files; file_scan != 0; file_scan = file_scan->next)
+                {
+                  for (unsigned int i = 0; i < level-1; ++i) printf("    ");
+                  printf("%lu\n", file_scan->size);
+
+                  scan->parent->size += file_scan->size;
+                }
+
+                for (Directory* dir_scan = scan->parent->subdirs; dir_scan != 0; dir_scan = dir_scan->next) scan->parent->size += dir_scan->size;
+
+                scan = scan->parent;
+                level -= 1;
+
+                if (scan->parent == 0)
+                {
+                  scan = 0;
+                  break;
+                }
+                else if (scan->next == 0) continue;
+                else
+                {
+                  scan = scan->next;
+                  break;
+                }
+              }
+            }
+          }
+        }
+#endif
 
         printf("%llu\n", root_dir.size);
         int64_t free_space    = 70000000 - (int64_t)root_dir.size;
