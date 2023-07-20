@@ -26,55 +26,74 @@ main(int argc, char** argv)
       if (input.data == 0 || fread(input.data, 1, input.size, input_file) != input_file_size) fprintf(stderr, "Failed to read input file\n");
       else
       {
-        R_V2S head_pos = R_V2S(0, 0);
-        R_V2S tail_pos = R_V2S(0, 0);
-        R_uint tail_visit_table_cap = 1024*1024;
-        R_V2S* tail_visit_table = malloc(sizeof(R_V2S)*tail_visit_table_cap);
-        R_uint tail_visit_table_size = 0;
+        R_V2S knots[10] = {0};
 
-        tail_visit_table[tail_visit_table_size++] = tail_pos;
+        R_uint tail_table_cap = 100000;
+        R_V2S* tail_tables[2] = {
+          [0] = malloc(sizeof(R_V2S)*tail_table_cap),
+          [1] = malloc(sizeof(R_V2S)*tail_table_cap),
+        };
+        R_uint tail_table_size[2] = {0};
+
+        tail_tables[0][tail_table_size[0]++] = R_V2S(0, 0);
+        tail_tables[1][tail_table_size[1]++] = R_V2S(0, 0);
 
         while (input.size > 0)
         {
-          R_u8 direction;
+          R_u8 dir_char;
           R_u32 amount;
-          input = R_String_EatN(input, R_String_PatternMatch(input, "%c %u32\r\n", &direction, &amount));
+          input = R_String_EatN(input, R_String_PatternMatch(input, "%c %u32\r\n", &dir_char, &amount));
 
-          R_uint direction_index;
           R_int sign;
-          if      (direction == 'U') direction_index = 1, sign = +1;
-          else if (direction == 'D') direction_index = 1, sign = -1;
-          else if (direction == 'R') direction_index = 0, sign = +1;
-          else                       direction_index = 0, sign = -1;
+          R_uint direction_index;
+          if      (dir_char == 'U') direction_index = 1, sign = +1;
+          else if (dir_char == 'D') direction_index = 1, sign = -1;
+          else if (dir_char == 'R') direction_index = 0, sign = +1;
+          else                      direction_index = 0, sign = -1;
 
           for (R_uint i = 0; i < amount; ++i)
           {
-            head_pos.e[direction_index] += sign;
+            knots[0].e[direction_index] += sign;
 
-            R_V2S tail_head = R_V2S_Sub(head_pos, tail_pos);
-
-            R_int a = tail_head.e[direction_index] / 2;
-            tail_pos.e[direction_index]     += a;
-            tail_pos.e[1 - direction_index] += R_ABS(a)*tail_head.e[1 - direction_index];
-
-            R_uint i = 0;
-            for (; i < tail_visit_table_size; ++i) if (tail_visit_table[i].x == tail_pos.x && tail_visit_table[i].y == tail_pos.y) break;
-
-            if (i == tail_visit_table_size)
+            for (R_uint j = 1; j < R_STATIC_ARRAY_SIZE(knots); ++j)
             {
-              R_ASSERT(tail_visit_table_size < tail_visit_table_cap);
-              tail_visit_table[tail_visit_table_size++] = tail_pos;
+              R_V2S diff      = R_V2S_Sub(knots[j-1], knots[j]);
+              R_V2S diff_on_2 = R_V2S(diff.x/2, diff.y/2);
+
+              if (diff_on_2.x != 0 && diff_on_2.y != 0)
+              {
+                knots[j].x += diff_on_2.x;
+                knots[j].y += diff_on_2.y;
+              }
+              else if (diff_on_2.x != 0)
+              {
+                knots[j].x += diff_on_2.x;
+                knots[j].y += diff.y;
+              }
+              else if (diff_on_2.y != 0)
+              {
+                knots[j].y += diff_on_2.y;
+                knots[j].x += diff.x;
+              }
+            }
+
+            for (R_uint j = 0; j < 2; ++j)
+            {
+              R_uint tail_i = (R_uint[2]){ 1, R_STATIC_ARRAY_SIZE(knots)-1 }[j];
+
+              R_uint k = 0;
+              for (; k < tail_table_size[j]; ++k) if (tail_tables[j][k].x == knots[tail_i].x && tail_tables[j][k].y == knots[tail_i].y) break;
+              if (k == tail_table_size[j])
+              {
+                R_ASSERT(tail_table_size[j] < tail_table_cap);
+                tail_tables[j][tail_table_size[j]++] = knots[tail_i];
+              }
             }
           }
         }
 
-        for (R_uint i = 0; i < tail_visit_table_size; ++i)
-        {
-          R_V2S v = tail_visit_table[i];
-          printf("(%d, %d)\n", v.x, v.y);
-        }
-
-        printf("Part 1: %llu\n", tail_visit_table_size);
+        printf("Part 1: %llu\n", tail_table_size[0]);
+        printf("Part 2: %llu\n", tail_table_size[1]);
       }
 
       fclose(input_file);
