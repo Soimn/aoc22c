@@ -13,99 +13,94 @@ typedef struct List
 typedef struct List_Item
 {
   R_bool is_list;
-    R_u32 value;
-    List list;
+  R_u32 value;
+  List list;
 } List_Item;
 
-R_uint
-ParseList(R_String input, R_uint i, List* list)
+void
+ParseList(R_String string, List* list)
 {
-  R_ASSERT(i < input.size && input.data[i] == '[');
-  ++i;
+  R_ASSERT(string.size != 0 && string.data[0] == '[' && string.data[string.size-1] == ']');
+  string = R_String_EatN(R_String_ChopN(string, 1), 1);
 
   list->size = 0;
-  for (R_uint j = i;;)
+  for (R_uint i = 0; i < string.size;)
   {
-    R_ASSERT(j < input.size);
-    if (input.data[j] == ']') break;
-
-    if (R_Char_IsDigit(input.data[j]))
+    if (string.data[i] == '[')
     {
-      while (j < input.size && R_Char_IsDigit(input.data[++j]));
-      R_ASSERT(j < input.size && (input.data[j] == ',' || input.data[j] == ']'));
-    }
-    else
-    {
-      R_ASSERT(input.data[j] == '[');
-      ++j;
+      ++i;
 
       R_uint nesting = 1;
       while (nesting != 0)
       {
-        R_ASSERT(j < input.size);
-
-        if (input.data[j] == '[')
-        {
-          ++nesting;
-        }
-        else if (input.data[j] == ']')
-        {
-          --nesting;
-        }
-
-        ++j;
+        if      (string.data[i] == '[') ++nesting;
+        else if (string.data[i] == ']') --nesting;
+        ++i;
       }
+    }
+    else
+    {
+      R_ASSERT(R_Char_IsDigit(string.data[i]));
+      while (R_Char_IsDigit(string.data[i])) ++i;
     }
 
     ++list->size;
-    if (input.data[j] == ',') ++j;
+    if (string.data[i] == ',') ++i;
   }
 
-  if (list->size == 0)
-  {
-    list->items = 0;
-    i          += 1;
-  }
+  if (list->size == 0) list->items = 0;
   else
   {
-    //list->items = malloc(sizeof(List_Item)*list->size);
-    R_u8* mem = VirtualAlloc(0, 4096, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-    //list->items = (List_Item*)(mem + (4096 - sizeof(List_Item)*list->size));
-    list->items = (List_Item*)mem;
+    list->items = calloc(list->size, sizeof(List_Item));
 
-    for (R_uint j = 0; j < list->size; ++j)
+    for (R_uint i = 0; string.size > 0;)
     {
-      List_Item* item = &list->items[j];
+      List_Item* item = &list->items[i++];
 
-      if (input.data[i] == '[')
+      if (R_Char_IsDigit(*string.data))
       {
-        item->is_list = R_true;
-        i = ParseList(input, i, &item->list);
+        item->is_list = R_false;
+        string = R_String_EatN(string, R_String_PatternMatch(string, "%u32", &item->value));
       }
       else
       {
-        item->is_list = R_false;
-        R_int match = R_String_PatternMatch(R_String_EatN(input, i), "%u32", &item->value);
-        R_ASSERT(match != -1);
-        i += match;
+        R_ASSERT(*string.data == '[');
+
+        R_String nested_string = {
+          .data = string.data,
+          .size = 0,
+        };
+
+        string = R_String_EatN(string, sizeof("[") - 1);
+        R_uint nesting = 1;
+        while (nesting != 0)
+        {
+          if      (*string.data == '[') ++nesting;
+          else if (*string.data == ']') --nesting;
+          string = R_String_EatN(string, 1);
+        }
+
+        nested_string.size = string.data - nested_string.data;
+
+        item->is_list = R_true;
+        ParseList(nested_string, &item->list);
       }
 
-      R_ASSERT(i < input.size && (input.data[i] == ',' || j == list->size-1 && input.data[i] == ']'));
-      ++i;
+      string = R_String_EatN(string, sizeof(",") - 1);
     }
   }
-
-  return i;
 }
 
 R_int
 CompareLists(List a, List b)
 {
-  R_bool result = 0;
+  R_int result = 0;
 
-  for (R_uint i = 0; result == 0 && i < a.size; ++i)
+  for (R_uint i = 0; result == 0; ++i)
   {
-    if (i == b.size) result = -1;
+    if      (i >= a.size && i >= b.size) break;
+    else if (i >= a.size) result = -2;
+    else if (i >= b.size) result =  2;
     else
     {
       List_Item item_a = a.items[i];
@@ -131,9 +126,8 @@ CompareLists(List a, List b)
       }
       else
       {
-        R_int subtraction = ((R_int)item_a.value - (R_int)item_b.value);
-
-        result = (subtraction < 0 ? -1 : !!subtraction);
+        R_int diff = (R_int)item_a.value - (R_int)item_b.value;
+        result = (diff < 0 ? -1 : !!diff);
       }
     }
   }
@@ -163,57 +157,68 @@ main(int argc, char** argv)
       if (input.data == 0 || fread(input.data, 1, input.size, input_file) != input_file_size) fprintf(stderr, "Failed to read input file\n");
       else
       {
-        R_uint line_count = 0;
-        for (R_uint i = 0;;)
+        R_uint list_count = 0;
+        for (R_uint i = 0; i < input.size;)
         {
-          while (i < input.size && input.data[i] != '\r') ++i;
+          if (input.data[i] != '\r')
+          {
+            ++list_count;
+            while (input.data[i] != '\r') ++i;
+          }
+
           i += 2;
-
-          line_count += 1;
-
-          if (i >= input.size) break;
-          else                 continue;
         }
 
-        R_uint list_count = (line_count + 1) / 2;
-        List* lists = malloc(sizeof(List)*list_count);
+        List* lists = calloc(list_count, sizeof(List));
 
-        R_ASSERT(list_count % 2 == 0);
-
-        R_uint i = 0;
-
-        for (R_uint j = 0, k = 0; j < line_count; ++j)
+        for (R_uint i = 0, j = 0; i < input.size;)
         {
-          if (input.data[i] == '\r')
+          if (input.data[i] != '\r')
           {
-            i += 2;
-            continue;
-          }
-          else
-          {
-            List* list = &lists[k++];
+            List* list = &lists[j++];
 
-            i = ParseList(input, i, list);
-            R_ASSERT(i < input.size && input.data[i] == '\r');
-            i += 2;
+            R_String string = { .data = input.data + i, .size = 0 };
+            while (input.data[i] != '\r') ++i, ++string.size;
+
+            ParseList(string, list);
           }
+
+          i += 2;
         }
 
-        /*
         R_uint part1_result = 0;
 
+        R_ASSERT(i % 2 == 0);
         for (R_uint i = 0; i < list_count; i += 2)
         {
-          R_ASSERT(i + 1 < list_count);
-
-          part1_result += (CompareLists(lists[i], lists[i + 1]) > -1 ? i/2 : 0);
+          part1_result += (CompareLists(lists[i], lists[i+1]) < 1 ? i/2 + 1 : 0);
         }
 
-        printf("Part 1: %llu\n", part1_result);*/
+        printf("Part 1: %llu\n", part1_result);
 
-        printf("[%u", lists[0].items[0].value);
-        for (R_uint i = 1; i < lists[0].size; ++i) printf(", %u", lists[0].items[i].value);
-        printf("]\n");
+        List first_divider;
+        ParseList(R_STRING("[[2]]"), &first_divider);
+
+        List second_divider;
+        ParseList(R_STRING("[[6]]"), &second_divider);
+
+        R_uint first_pos  = 0;
+        R_uint second_pos = 0;
+        for (R_uint i = 0; i < list_count; ++i)
+        {
+          first_pos  += (CompareLists(first_divider,  lists[i]) > 0);
+          second_pos += (CompareLists(second_divider, lists[i]) > 0);
+        }
+
+        // NOTE: Account for eachother
+        first_pos  += (first_pos > second_pos);
+        second_pos += (first_pos < second_pos);
+
+        // NOTE: Account for 1 indexing
+        first_pos  += 1;
+        second_pos += 1;
+
+        printf("Part 2: %llu\n", first_pos*second_pos);
       }
 
       fclose(input_file);
