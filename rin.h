@@ -870,6 +870,12 @@ typedef union R_V2S
 
 #define R_V2S(X, Y) (R_V2S){ .x = (X), .y = (Y) }
 
+inline R_bool
+R_V2S_Match(R_V2S a, R_V2S b)
+{
+  return (a.x == b.x && a.y == b.y);
+}
+
 inline R_V2S
 R_V2S_Add(R_V2S a, R_V2S b)
 {
