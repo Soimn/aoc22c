@@ -113,9 +113,14 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line, int show_cm
     }
   }
 
+  BufferHeight = (max_y + 1) - min_y + 1;
+
+  min_x -= BufferHeight;
+  max_x += BufferHeight;
+
   BufferWidth  = (max_x + 1) - min_x;
-  BufferHeight = (max_y + 1) - min_y;
   R_V2S sand_source = R_V2S(500 - min_x, 0);
+  R_u32 part1_result = 0;
 
   R_u32* backbuffer_memory = VirtualAlloc(0, 2*BufferWidth*BufferHeight*sizeof(R_u32), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
   Backbuffer  = backbuffer_memory;
@@ -203,39 +208,57 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line, int show_cm
 
           R_u32 sand_color = 0xFFBBBB46;
 
-          if ((sand_move_counter = ++sand_move_counter % 1) == 0)
+          for (R_uint i = 0; i < 50; ++i)
           {
-            curr_sand.y += 1;
-
-            if (curr_sand.y < BufferHeight && Backbuffer[curr_sand.y*BufferWidth + curr_sand.x] != 0)
+            if (Backbuffer[sand_source.y*BufferWidth + sand_source.x] != 0)
             {
-              curr_sand.x -= 1;
+              CHAR buffer[256];
+              wsprintfA(buffer, "Result: %u", sand_at_rest);
+              MessageBoxA(window, buffer, "Part 2", MB_OK);
 
-              if (curr_sand.x >= 0 && Backbuffer[curr_sand.y*BufferWidth + curr_sand.x] != 0)
+              ExitProcess(0);
+            }
+            else if (curr_sand.y == BufferHeight-1)
+            {
+                Backbuffer[curr_sand.y*BufferWidth + curr_sand.x] = sand_color;
+                curr_sand = sand_source;
+                sand_at_rest += 1;
+            }
+            else
+            {
+              curr_sand.y += 1;
+
+              if (curr_sand.y < BufferHeight && Backbuffer[curr_sand.y*BufferWidth + curr_sand.x] != 0)
               {
-                curr_sand.x += 2;
+                curr_sand.x -= 1;
 
-                if (curr_sand.x < BufferWidth && Backbuffer[curr_sand.y*BufferWidth + curr_sand.x] != 0)
+                if (curr_sand.x >= 0 && Backbuffer[curr_sand.y*BufferWidth + curr_sand.x] != 0)
                 {
-                  curr_sand.x -= 1;
-                  curr_sand.y -= 1;
-                  if (curr_sand.x >= 0 && curr_sand.x <= BufferWidth && curr_sand.y <= BufferHeight)
+                  curr_sand.x += 2;
+
+                  if (curr_sand.x < BufferWidth && Backbuffer[curr_sand.y*BufferWidth + curr_sand.x] != 0)
                   {
-                    Backbuffer[curr_sand.y*BufferWidth + curr_sand.x] = sand_color;
-                    curr_sand = sand_source;
-                    sand_at_rest += 1;
+                    curr_sand.x -= 1;
+                    curr_sand.y -= 1;
+                    if (curr_sand.x >= 0 && curr_sand.x <= BufferWidth && curr_sand.y <= BufferHeight)
+                    {
+                      Backbuffer[curr_sand.y*BufferWidth + curr_sand.x] = sand_color;
+                      curr_sand = sand_source;
+                      sand_at_rest += 1;
+                    }
                   }
                 }
               }
             }
           }
 
-          if (curr_sand.x < 0 || curr_sand.x >= BufferWidth || curr_sand.y < 0 || curr_sand.y >= BufferHeight)
+          if (part1_result == 0 && (curr_sand.x < 0 || curr_sand.x >= BufferWidth || curr_sand.y < 0 || curr_sand.y >= BufferHeight))
           {
+            part1_result = sand_at_rest;
+
             CHAR buffer[256];
-            wsprintfA(buffer, "Result: %u", sand_at_rest);
+            wsprintfA(buffer, "Result: %u", part1_result);
             MessageBoxA(window, buffer, "Part 1", MB_OK);
-            ExitProcess(0);
           }
 
           for (R_uint i = 0; i < BufferWidth*BufferHeight; ++i)
