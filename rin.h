@@ -92,6 +92,11 @@ typedef double R_f64;
 #  error NOT IMPLEMENTED
 #endif
 
+#define R_S8_MAX  ((R_s8)0x7F)
+#define R_S16_MAX ((R_s16)0x7FFF)
+#define R_S32_MAX ((R_s32)0x7FFFFFFFDL)
+#define R_S64_MAX ((R_s64)0x7FFFFFFFFFFFFFFFDLL)
+
 #define R_U8_MAX  ((R_u8)0xFF)
 #define R_U16_MAX ((R_u16)0xFFFF)
 #define R_U32_MAX ((R_u32)0xFFFFFFFFUL)
