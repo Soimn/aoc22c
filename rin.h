@@ -92,10 +92,15 @@ typedef double R_f64;
 #  error NOT IMPLEMENTED
 #endif
 
+#define R_S8_MIN  ((R_s8)0x80)
+#define R_S16_MIN ((R_s16)0x8000)
+#define R_S32_MIN ((R_s32)0x80000000UL)
+#define R_S64_MIN ((R_s64)0x8000000000000000ULL)
+
 #define R_S8_MAX  ((R_s8)0x7F)
 #define R_S16_MAX ((R_s16)0x7FFF)
-#define R_S32_MAX ((R_s32)0x7FFFFFFFDL)
-#define R_S64_MAX ((R_s64)0x7FFFFFFFFFFFFFFFDLL)
+#define R_S32_MAX ((R_s32)0x7FFFFFFFUL)
+#define R_S64_MAX ((R_s64)0x7FFFFFFFFFFFFFFFULL)
 
 #define R_U8_MAX  ((R_u8)0xFF)
 #define R_U16_MAX ((R_u16)0xFFFF)
@@ -569,11 +574,8 @@ R_String_EatN(R_String string, R_umm n_chars)
 }
 
 R_smm // NOTE: -1: no, or erroneous, match, x: length of matched string
-R_String_PatternMatch(R_String string, const char* format, ...) // NOTE: Var arg is a list of pointers to locations receiving the parsed input, format is limited to %%, %c, %x[size], %u[size] and %s[size] for now
+R_String_PatternMatchV(R_String string, const char* format, R_Arg_List arg_list) // NOTE: Var arg is a list of pointers to locations receiving the parsed input, format is limited to %%, %c, %x[size], %u[size] and %s[size] for now
 {
-  R_Arg_List arg_list;
-  R_VA_START(arg_list, format);
-
   R_smm matched_chars = 0;
   for (char* scan = (char*)format; *scan != 0 && matched_chars != -1; )
   {
@@ -731,9 +733,30 @@ R_String_PatternMatch(R_String string, const char* format, ...) // NOTE: Var arg
     }
   }
 
+  return matched_chars;
+}
+
+R_smm
+R_String_PatternMatch(R_String string, const char* format, ...)
+{
+  R_Arg_List arg_list;
+  R_VA_START(arg_list, format);
+  R_smm eat = R_String_PatternMatchV(string, format, arg_list);
   R_VA_END(arg_list);
 
-  return matched_chars;
+  return eat;
+}
+
+R_String
+R_String_EatPatternMatch(R_String string, const char* format, ...)
+{
+  R_Arg_List arg_list;
+  R_VA_START(arg_list, format);
+  R_smm eat = R_String_PatternMatchV(string, format, arg_list);
+  R_VA_END(arg_list);
+
+  if (eat == -1) return string;
+  else           return R_String_EatN(string, eat);
 }
 
 /// ------------------------------------------------------
