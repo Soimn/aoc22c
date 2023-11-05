@@ -1,10 +1,54 @@
-Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
-Valve BB has flow rate=13; tunnels lead to valves CC, AA
-Valve CC has flow rate=2; tunnels lead to valves DD, BB
-Valve DD has flow rate=20; tunnels lead to valves CC, AA, EE
-Valve EE has flow rate=3; tunnels lead to valves FF, DD
-Valve FF has flow rate=0; tunnels lead to valves EE, GG
-Valve GG has flow rate=0; tunnels lead to valves FF, HH
-Valve HH has flow rate=22; tunnel leads to valve GG
-Valve II has flow rate=0; tunnels lead to valves AA, JJ
-Valve JJ has flow rate=21; tunnel leads to valve II
+OK,0,RW,FX
+JY,13,TT
+FX,16,OK,LF,GO,IV
+TD,0,XZ,ED
+VF,9,DS,LU,TR,WO
+TT,0,XZ,JY
+KR,8,VL,CI,GO,JJ,TQ
+HN,0,YG,AA
+MC,24,MI,EE,TH,YG
+XM,0,AF,JL
+XE,0,XP,AF
+ZF,0,EM,EI
+DS,0,VF,LF
+AF,7,AW,XE,CI,BJ,XM
+NL,0,KF,EM
+LF,0,FX,DS
+XZ,25,TD,TT
+TQ,0,AA,KR
+WO,0,VF,NE
+TH,0,LU,MC
+AA,0,TQ,KF,HN,XP,TY
+KB,0,WP,XL
+IV,0,PK,FX
+MI,0,JF,MC
+EX,22,JL,ZZ,SL
+ZZ,0,EX,JS
+KF,0,NL,AA
+PK,11,IV,HP
+TR,0,DI,VF
+YG,0,HN,MC
+JL,0,EX,XM
+VL,0,JS,KR
+XP,0,AA,XE
+TY,0,JS,AA
+EM,4,JJ,NL,ZF,WP,AW
+BJ,0,WK,AF
+JJ,0,EM,KR
+RW,14,NE,OK
+EI,0,ZF,JS
+SL,0,HP,EX
+EE,0,MC,XL
+WK,0,BJ,JS
+AW,0,EM,AF
+XL,21,EE,KB
+JF,0,MI,ED
+LU,0,TH,VF
+CI,0,AF,KR
+ED,23,JF,TD
+JS,3,VL,ZZ,EI,TY,WK
+NE,0,RW,WO
+DI,12,TR
+WP,0,KB,EM
+GO,0,FX,KR
+HP,0,SL,PK
