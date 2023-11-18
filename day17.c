@@ -75,8 +75,13 @@ Stone Stones[] = {
 int
 main(int argc, char** argv)
 {
-	u8* flow      = ExampleInput;
+	u8* flow      = Input;
 	uint flow_len = strlen(flow);
+
+	typedef struct Cache_Entry { u8 p; u8 stone_x; u8 stone_y; u16 flow_cursor; uint floor[7]; } Cache_Entry;
+	uint cache_cap = 10000;
+	uint cache_size = 0;
+	Cache_Entry* cache = malloc(sizeof(Cache_Entry)*cache_cap);
 
 	uint chamber_size       = 1000;
 	u8* chamber             = calloc(chamber_size, sizeof(u8));
@@ -89,8 +94,10 @@ main(int argc, char** argv)
 	uint flow_cursor = 0;
 	for (uint i = 0; i < 1000000000000; ++i)
 	{
-		if (i % 10000000 == 0) printf("%llu\n", i), fflush(stdout);
-		if (i == 2022) printf("Part 1: %llu\n", pile_floor[pile_floor_max_idx]);
+		//if (i % 10000000 == 0) printf("%llu\n", i), fflush(stdout);
+		//if (i == 2022) printf("Part 1: %llu\n", pile_floor[pile_floor_max_idx]);
+		//if (i == 28 || i == 168 || i == 308 || i == 28+92) printf("[%llu] %llu\n", i, pile_floor[pile_floor_max_idx]), fflush(stdout);
+		if (i == 176 || i == 7156 || i == 14146 || i == 176+4324) printf("[%llu] %llu\n", i, pile_floor[pile_floor_max_idx]), fflush(stdout);
 
 		Stone stone = Stones[i%(sizeof(Stones)/sizeof(0[Stones]))];
 		uint stone_y = (pile_floor[pile_floor_max_idx] - pile_floor[pile_floor_min_idx]) + 3;
@@ -117,6 +124,13 @@ main(int argc, char** argv)
 			u32 dropped_chamber_slice = chamber[(chamber_size + chamber_base + stone_y - 1) % chamber_size] | (chamber_slice << 8);
 			if (stone_y == 0 || (dropped_chamber_slice & stone.pattern) != 0)
 			{
+				/*
+				if (cache_size < cache_cap)
+				{
+					cache[cache_size++] = (Cache_Entry){ .p = i%4, .stone_x = stone_x, .stone_y = stone_y, .flow_cursor = (u16)flow_cursor, .floor = { pile_floor[0], pile_floor[1], pile_floor[2], pile_floor[3], pile_floor[4], pile_floor[5], pile_floor[6]}};
+				}
+				else goto end;*/
+
 				uint old_pile_floor_min = pile_floor[pile_floor_min_idx];
 
 				/// Add stone to stone pile
@@ -148,12 +162,8 @@ main(int argc, char** argv)
 							pile_floor_min_idx = j;
 						}
 					}
-					// TODO: raise floor	
-					uint old_chamber_base = chamber_base;
-					uint new_chamber_base = (chamber_base + (pile_floor[pile_floor_min_idx] - old_pile_floor_min)) % chamber_size;
-					chamber_base = new_chamber_base;
 
-					//for (uint j = old_chamber_base; j != new_chamber_base; j = (j+1)%chamber_size) chamber[j] = 0;
+					chamber_base = (chamber_base + (pile_floor[pile_floor_min_idx] - old_pile_floor_min)) % chamber_size;
 				}
 
 				break;
@@ -163,6 +173,19 @@ main(int argc, char** argv)
 	}
 
 	printf("Part 2: %llu\n", pile_floor[pile_floor_max_idx]);
+/*
+	end:;
+	for (uint i = 0; i < cache_cap; ++i)
+	{
+		for (uint j = i+1; j < cache_cap; ++j)
+		{
+			if (cache[i].p == cache[j].p && cache[i].stone_x == cache[j].stone_x && cache[i].stone_y == cache[j].stone_y && cache[i].flow_cursor == cache[j].flow_cursor && memcmp(cache[i].floor, cache[j].floor, sizeof(uint)*7))
+			{
+				printf("p: %u, x: %u, c: %u at %llu to %llu\n", cache[i].p, cache[i].stone_x, cache[i].flow_cursor, i, j);
+				break;
+			}
+		}
+	}*/
 
 	return 0;
 }
